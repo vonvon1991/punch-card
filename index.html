@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4C6CE">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Punch card">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Skipped-pastry punch card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --page: #F4C6CE;
+  --card: #FFF9F2;
+  --ink: #3A1C2B;
+  --ink-soft: rgba(58, 28, 43, .66);
+  --line: rgba(58, 28, 43, .3);
+  --stamp: #1F7A5C;
+  --butter: #F0B93A;
+  --btn-ink: #FFF9F2;
+  --hole-shadow: rgba(58, 28, 43, .35);
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #24131C;
+    --card: #3A222E;
+    --ink: #FBE9EC;
+    --ink-soft: rgba(251, 233, 236, .7);
+    --line: rgba(251, 233, 236, .3);
+    --stamp: #63D3A9;
+    --butter: #F3C65A;
+    --btn-ink: #24131C;
+    --hole-shadow: rgba(0, 0, 0, .6);
+  }
+}
+:root[data-theme="dark"] {
+  --page: #24131C;
+  --card: #3A222E;
+  --ink: #FBE9EC;
+  --ink-soft: rgba(251, 233, 236, .7);
+  --line: rgba(251, 233, 236, .3);
+  --stamp: #63D3A9;
+  --butter: #F3C65A;
+  --btn-ink: #24131C;
+  --hole-shadow: rgba(0, 0, 0, .6);
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+h1 {
+  font-family: "Bagel Fat One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  font-weight: 400;
+  font-size: clamp(2.5rem, 11vw, 4.5rem);
+  line-height: .95;
+  letter-spacing: -.01em;
+  margin: 0 0 1rem;
+  text-wrap: balance;
+}
+.lede { max-width: 34rem; margin: 0 0 1.5rem; }
+.tally {
+  font-size: 1.25rem;
+  font-weight: 500;
+  max-width: 34rem;
+  margin: 0 0 1.5rem;
+}
+.tally b { font-weight: 700; }
+
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: .75rem; }
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: transparent;
+  padding: .6rem 1.1rem;
+  font-weight: 700;
+}
+button:focus-visible, input:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--stamp);
+  outline-offset: 3px;
+}
+button:disabled { opacity: .4; cursor: default; }
+.punch-btn {
+  background: var(--ink);
+  color: var(--btn-ink);
+  font-size: 1.2rem;
+  padding: .9rem 1.6rem;
+}
+.punch-btn:active:not(:disabled) { transform: translateY(1px); }
+.say { min-height: 1.6em; margin: 0 0 2rem; color: var(--stamp); font-weight: 700; }
+
+.card {
+  position: relative;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 1.25rem 1.25rem 1.4rem;
+  margin-bottom: 1rem;
+}
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: .9rem;
+  border-bottom: 2px dashed var(--line);
+  margin-bottom: 1rem;
+}
+.card h2 {
+  font-family: "Bagel Fat One", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  margin: 0;
+}
+.card .cost { font-weight: 700; white-space: nowrap; }
+.card .progress { margin: 0 0 1rem; color: var(--ink-soft); }
+.card.waiting h2, .card.waiting .cost { color: var(--ink-soft); }
+.card.waiting .card-head, .card.done .card-head { border-bottom: 0; padding-bottom: 0; margin-bottom: .35rem; }
+.card.waiting .progress, .card.done .progress { margin-bottom: .5rem; }
+
+.paid {
+  position: absolute;
+  top: .9rem;
+  right: 1rem;
+  transform: rotate(-7deg);
+  border: 3px solid var(--stamp);
+  color: var(--stamp);
+  border-radius: 8px;
+  padding: .1rem .6rem;
+  font-family: "Bagel Fat One", "Arial Rounded MT Bold", sans-serif;
+  font-size: 1.1rem;
+  background: var(--card);
+}
+.card.done .cost { visibility: hidden; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.1rem, 1fr));
+  gap: .5rem;
+}
+.hole {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px dashed var(--line);
+  display: grid;
+  place-items: center;
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  user-select: none;
+}
+.hole.punched {
+  border: 0;
+  background: var(--page);
+  box-shadow: inset 0 2px 4px var(--hole-shadow);
+  color: transparent;
+}
+.hole.next {
+  border: 3px solid var(--stamp);
+  color: var(--stamp);
+  cursor: pointer;
+  font-size: 1rem;
+}
+.hole.prize:not(.punched) { border-style: solid; border-color: var(--butter); color: var(--ink); font-size: .95rem; }
+.hole.just { animation: pop .28s ease-out; }
+@keyframes pop { from { transform: scale(1.5); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .hole.just { animation: none; } }
+
+details summary { cursor: pointer; font-weight: 700; width: fit-content; border-radius: 6px; }
+details .grid { margin-top: .9rem; }
+
+.settings {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 2px dashed var(--line);
+  display: grid;
+  gap: 1rem;
+}
+.settings label { font-weight: 500; }
+.settings input {
+  font: inherit;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  width: 5.5rem;
+  padding: .35rem .5rem;
+  margin-left: .25rem;
+}
+.settings .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+.small { font-size: .9rem; color: var(--ink-soft); margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Skipped-pastry punch card</h1>
+  <p class="lede">Punch a hole every time you walk past a solo bakery stop. Each punch is money that goes to your certifications instead.</p>
+
+  <p class="tally" id="tally"></p>
+
+  <div class="actions">
+    <button class="punch-btn" id="punch" type="button">Punch a skipped stop</button>
+    <button id="undo" type="button">Undo last punch</button>
+  </div>
+  <p class="say" id="say" role="status" aria-live="polite"></p>
+
+  <div id="cards"></div>
+
+  <section class="settings" aria-label="Settings">
+    <div class="row">
+      <label for="price">A typical stop costs me $<input id="price" type="number" inputmode="decimal" min="1" max="50" step="0.5"></label>
+    </div>
+    <p class="small">Changing this resizes every card. Your punches stay.</p>
+    <div class="row" id="resetRow">
+      <button id="reset" type="button">Erase all punches</button>
+    </div>
+    <p class="small" id="saveNote"></p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var GOALS = [
+    { name: "Yoga 300hr", cost: 190 },
+    { name: "Pilates module 1", cost: 650 },
+    { name: "Pilates module 2", cost: 650 },
+    { name: "Pilates module 3", cost: 650 },
+    { name: "Pilates module 4", cost: 650 }
+  ];
+  var KEY = "pastry-punch-card-v1";
+  var DOC = "card/state";
+  var state = { price: 20, punches: [], updatedAt: 0, v: 2 };
+  var db = null, saving = false, dirty = false, saveTimer = null, readOnly = false;
+
+  var el = function (id) { return document.getElementById(id); };
+  var tallyEl = el("tally"), cardsEl = el("cards"), sayEl = el("say");
+  var punchBtn = el("punch"), undoBtn = el("undo"), priceEl = el("price");
+  var resetRow = el("resetRow"), saveNote = el("saveNote");
+
+  function valid(s) {
+    return s && typeof s.price === "number" && s.price >= 1 && s.price <= 50 && Array.isArray(s.punches);
+  }
+  function adopt(s) {
+    state = {
+      v: 2,
+      price: (s.v !== 2 && s.price === 7) ? 20 : s.price,
+      punches: s.punches.filter(function (t) { return typeof t === "number"; }),
+      updatedAt: typeof s.updatedAt === "number" ? s.updatedAt : 0
+    };
+  }
+  function money(n) {
+    return "$" + (Math.round(n * 100) % 100 === 0 ? Math.round(n).toLocaleString() : n.toFixed(2));
+  }
+  function layout() {
+    var sizes = GOALS.map(function (g) { return Math.ceil(g.cost / state.price); });
+    var total = sizes.reduce(function (a, b) { return a + b; }, 0);
+    return { sizes: sizes, total: total };
+  }
+  function weekStart() {
+    var d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d.getTime();
+  }
+
+  function render(justIndex) {
+    var lay = layout();
+    var count = Math.min(state.punches.length, lay.total);
+    var saved = count * state.price;
+    var ws = weekStart();
+    var thisWeek = state.punches.filter(function (t) { return t >= ws; }).length;
+
+    var remaining = count, activeIdx = -1, html = "", offset = 0;
+    GOALS.forEach(function (g, i) {
+      var size = lay.sizes[i];
+      var filled = Math.max(0, Math.min(size, remaining));
+      remaining -= filled;
+      var isDone = filled === size;
+      var isActive = !isDone && activeIdx === -1;
+      if (isActive) activeIdx = i;
+      var cls = isDone ? "done" : (isActive ? "active" : "waiting");
+
+      var grid = '<div class="grid" aria-hidden="true">';
+      for (var b = 0; b < size; b++) {
+        var c = "hole";
+        var label = "";
+        if (b < filled) {
+          c += " punched";
+          if (offset + b === justIndex) c += " just";
+        } else if (isActive && b === filled) {
+          c += " next";
+          label = "+";
+        } else if (b === size - 1) {
+          label = "\u2605";
+        } else if ((b + 1) % 10 === 0) {
+          label = String(b + 1);
+        }
+        if (b === size - 1) c += " prize";
+        grid += '<span class="' + c + '">' + label + "</span>";
+      }
+      grid += "</div>";
+
+      html += '<section class="card ' + cls + '">';
+      html += '<div class="card-head"><h2>' + g.name + '</h2><span class="cost">' + money(g.cost) + "</span></div>";
+      if (isDone) {
+        html += '<span class="paid">Paid for</span>';
+        html += '<p class="progress">All ' + size + " punches filled.</p>";
+        html += "<details><summary>Show the full card</summary>" + grid + "</details>";
+      } else if (isActive) {
+        html += '<p class="progress">' + filled + " of " + size + " punches. " +
+          money(Math.min(g.cost, filled * state.price)) + " of " + money(g.cost) + ".</p>" + grid;
+      } else {
+        html += '<p class="progress">' + size + " punches. Opens when the card above is full.</p>";
+      }
+      html += "</section>";
+      offset += size;
+    });
+    cardsEl.innerHTML = html;
+
+    var tally;
+    if (count === 0) {
+      tally = "No punches yet. The first one starts the <b>Yoga 300hr</b> card.";
+    } else if (activeIdx === -1) {
+      tally = "Every card is full. You skipped <b>" + count + " stops</b> and covered all <b>" + money(GOALS.reduce(function (t, g) { return t + g.cost; }, 0)) + "</b>.";
+    } else {
+      var doneBefore = 0;
+      for (var k = 0; k < activeIdx; k++) doneBefore += lay.sizes[k];
+      var left = lay.sizes[activeIdx] - (count - doneBefore);
+      tally = "You have skipped <b>" + count + (count === 1 ? " stop" : " stops") + "</b> and kept <b>" + money(saved) +
+        "</b>. <b>" + left + " more</b> " + (left === 1 ? "pays" : "pay") + " for " + GOALS[activeIdx].name + "." +
+        (thisWeek ? " " + thisWeek + " this week." : "");
+    }
+    tallyEl.innerHTML = tally;
+
+    punchBtn.disabled = readOnly || count >= lay.total;
+    undoBtn.disabled = readOnly || state.punches.length === 0;
+    if (document.activeElement !== priceEl) priceEl.value = state.price;
+    priceEl.disabled = readOnly;
+    return { lay: lay, count: count };
+  }
+
+  function touch() {
+    state.updatedAt = Date.now();
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    queueSave();
+  }
+  function queueSave() {
+    if (!db || readOnly) return;
+    dirty = true;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 700);
+  }
+  function flush() {
+    if (!db || saving || !dirty) return;
+    saving = true; dirty = false;
+    db.doc(DOC).set({ v: 2, price: state.price, punches: state.punches, updatedAt: state.updatedAt })
+      .then(function () { note("Saved to this card."); })
+      .catch(function (err) {
+        if (err && err.code === "invalid_argument") {
+          readOnly = true;
+          note("You can view this card but not punch it.");
+          render();
+        } else {
+          note("Could not save just now. Your punches are kept on this device.");
+        }
+      })
+      .then(function () { saving = false; if (dirty) flush(); });
+  }
+  function note(t) { saveNote.textContent = t; }
+
+  function punch() {
+    var lay = layout();
+    if (readOnly || state.punches.length >= lay.total) return;
+    var before = cardAt(state.punches.length, lay);
+    state.punches.push(Date.now());
+    touch();
+    render(state.punches.length - 1);
+    var after = cardAt(state.punches.length, lay);
+    if (after !== before) {
+      sayEl.textContent = GOALS[before].name + " is paid for. Move " + money(state.price) + " over, then go sign up.";
+    } else {
+      sayEl.textContent = "Punched. Now move " + money(state.price) + " to your certification account.";
+    }
+  }
+  function cardAt(count, lay) {
+    var acc = 0;
+    for (var i = 0; i < lay.sizes.length; i++) {
+      acc += lay.sizes[i];
+      if (count < acc) return i;
+    }
+    return lay.sizes.length;
+  }
+  function undo() {
+    if (readOnly || !state.punches.length) return;
+    state.punches.pop();
+    touch();
+    render();
+    sayEl.textContent = "Last punch removed.";
+  }
+
+  punchBtn.addEventListener("click", punch);
+  undoBtn.addEventListener("click", undo);
+  cardsEl.addEventListener("click", function (e) {
+    if (e.target && e.target.classList && e.target.classList.contains("next")) punch();
+  });
+  priceEl.addEventListener("change", function () {
+    var v = parseFloat(priceEl.value);
+    if (!isFinite(v) || v < 1 || v > 50) { priceEl.value = state.price; return; }
+    state.price = Math.round(v * 100) / 100;
+    var lay = layout();
+    if (state.punches.length > lay.total) state.punches.length = lay.total;
+    touch();
+    render();
+    sayEl.textContent = "Cards resized for " + money(state.price) + " a stop.";
+  });
+
+  function showReset() {
+    resetRow.innerHTML = '<button id="reset" type="button">Erase all punches</button>';
+    el("reset").addEventListener("click", askReset);
+  }
+  function askReset() {
+    if (readOnly) return;
+    resetRow.innerHTML = '<span>Erase every punch and start over?</span>' +
+      '<button id="yes" type="button">Erase all punches</button>' +
+      '<button id="no" type="button">Keep my punches</button>';
+    el("yes").addEventListener("click", function () {
+      state.punches = [];
+      touch();
+      render();
+      showReset();
+      sayEl.textContent = "All punches erased.";
+    });
+    el("no").addEventListener("click", showReset);
+    el("no").focus();
+  }
+  el("reset").addEventListener("click", askReset);
+
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) { var parsed = JSON.parse(raw); if (valid(parsed)) adopt(parsed); }
+  } catch (e) {}
+  render();
+  note("Punches are kept on this device.");
+
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("db").then(function (d) {
+      if (!d) return;
+      db = d;
+      return d.doc(DOC).get().then(function (snap) {
+        var remote = snap.exists ? snap.data() : null;
+        if (valid(remote) && (remote.updatedAt || 0) >= state.updatedAt) {
+          adopt(remote);
+          try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+          render();
+          note("Saved to this card.");
+        } else if (state.updatedAt > 0) {
+          queueSave();
+        } else {
+          note("Punches save to this card.");
+        }
+      });
+    }).catch(function () {});
+  }
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); });
+}
+if (navigator.storage && navigator.storage.persist) { navigator.storage.persist().catch(function () {}); }
+</script>
+</body>
+</html>
